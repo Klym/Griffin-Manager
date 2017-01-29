@@ -64,6 +64,33 @@ class MainForm(Ui_Main_Form):
         self.winrate.setText(('%.1f' % p.winrate) + '%')
         self.avgExp.setText('%d' % p.avg_stat)
 
+    def change_rank(self):
+        p_index = self.sostavList.currentIndex().row()
+        r_index = self.rank.currentIndex()
+        p = self.players[p_index]
+        r = self.ranks[r_index]
+
+        if p.rank.name == r.name or p_index == -1:
+            return
+        print(True)
+        p.rank = r
+        p.scores = r.scores
+        self.scores.setText('%.2f' % r.scores)
+
+    def change_score(self):
+        p_index = self.sostavList.currentIndex().row()
+        p = self.players[p_index]
+        scores = float(self.scores.text())
+        p.scores = scores
+        current_rank = None
+        for rank in self.ranks:
+            if scores >= rank.scores:
+                current_rank = rank
+            else:
+                break
+        p.rank = current_rank
+        self.rank.setCurrentText(p.rank.name)
+
 if __name__ == "__main__":
     engine = sqlalchemy.create_engine("sqlite:///griffin.db")
     Session = sessionmaker(bind=engine)

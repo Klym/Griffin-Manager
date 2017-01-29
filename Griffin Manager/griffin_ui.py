@@ -130,6 +130,8 @@ class Ui_Main_Form(object):
         self.exitButton.clicked.connect(Main_Form.close)
         # new slots
         self.sostavList.itemSelectionChanged.connect(self.update_info)
+        self.rank.currentTextChanged.connect(self.change_rank)
+        self.scores.textEdited.connect(self.change_score)
         QtCore.QMetaObject.connectSlotsByName(Main_Form)
 
     def retranslateUi(self, Main_Form):
