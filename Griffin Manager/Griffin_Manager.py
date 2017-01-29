@@ -29,22 +29,26 @@ class MainForm(Ui_Main_Form):
         self.sostavList.header().resizeSection(3, 40)
 
         self.select_data()
-        
+        self.fill_data()
+
         # set first item selected
         self.sostavList.setCurrentItem(self.sostavList.topLevelItem(0))
 
     def select_data(self):
-        # select and bind players
-        self.players = []
-        for player in session.query(Player).order_by(Player.scores.desc()).all():
-            self.players.append(player)
-            QTreeWidgetItem(self.sostavList, [player.name, '%.2f' % player.scores, player.rank.name, '%s' % player.level])
-
+        # select players
+        self.players = [p for p in session.query(Player).order_by(Player.scores.desc()).all()]
+            
         # select and bind ranks
         self.ranks = []
         for rank in session.query(Rank).order_by(Rank.scores).all():
             self.ranks.append(rank)
             self.rank.addItem(rank.name)
+
+    def fill_data(self):
+        # clear list and fill it sorting by scores
+        self.sostavList.clear()
+        for player in sorted(self.players, key=lambda x: x.scores, reverse=True):
+            QTreeWidgetItem(self.sostavList, [player.name, '%.2f' % player.scores, player.rank.name, '%s' % player.level])
 
     def update_info(self):
         # get selected player's object
@@ -65,31 +69,57 @@ class MainForm(Ui_Main_Form):
         self.avgExp.setText('%d' % p.avg_stat)
 
     def change_rank(self):
+        # get selected player's and rank's objects
         p_index = self.sostavList.currentIndex().row()
         r_index = self.rank.currentIndex()
         p = self.players[p_index]
         r = self.ranks[r_index]
 
+        # ignore on scores changed event and on first binding
         if p.rank.name == r.name or p_index == -1:
             return
-        print(True)
+
+        # update model and ui
         p.rank = r
         p.scores = r.scores
         self.scores.setText('%.2f' % r.scores)
+        self.sostavList.currentItem().setText(1, '%.2f' % r.scores)
+        self.sostavList.currentItem().setText(2, r.name)
 
     def change_score(self):
+        # get selected player's object and new scores
         p_index = self.sostavList.currentIndex().row()
         p = self.players[p_index]
         scores = float(self.scores.text())
+
+        # update player's scores
         p.scores = scores
+        self.sostavList.currentItem().setText(1, '%.2f' % scores)
+
+        # detect new rank
         current_rank = None
         for rank in self.ranks:
             if scores >= rank.scores:
                 current_rank = rank
             else:
                 break
+
+        # update player's rank
         p.rank = current_rank
         self.rank.setCurrentText(p.rank.name)
+        self.sostavList.currentItem().setText(2, p.rank.name)
+
+    def save(self):
+        # save all changes
+        session.commit()
+
+    def cancel(self):
+        # cancel all changes
+        session.rollback()
+        self.fill_data()
+
+        # set first item selected
+        self.sostavList.setCurrentItem(self.sostavList.topLevelItem(0))
 
 if __name__ == "__main__":
     engine = sqlalchemy.create_engine("sqlite:///griffin.db")
