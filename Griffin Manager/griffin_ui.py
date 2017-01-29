@@ -128,6 +128,8 @@ class Ui_Main_Form(object):
 
         self.retranslateUi(Main_Form)
         self.exitButton.clicked.connect(Main_Form.close)
+        # new slots
+        self.sostavList.itemSelectionChanged.connect(self.update_info)
         QtCore.QMetaObject.connectSlotsByName(Main_Form)
 
     def retranslateUi(self, Main_Form):
