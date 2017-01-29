@@ -1,4 +1,5 @@
 Griffin Manager/__pycache__/*
 Griffin Manager/*.pyproj
+Griffin Manager/*.db
 .vs/*
 *.sln
