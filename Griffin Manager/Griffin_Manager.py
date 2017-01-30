@@ -91,12 +91,20 @@ class MainForm(Ui_Main_Form):
         self.sostavList.currentItem().setText(2, r.name)
 
     def change_score(self):
+        # if scores is empty set zero
+        scores = self.scores.text()
+        if scores == "":
+            scores = 0
+            self.scores.setText("0.00")
+
         # raise exception if value is not float or gt max scores
-        try:
-            scores = float(self.scores.text())
+        try:                
+            scores = float(scores)
             max = self.ranks[-1].scores
             if scores > max:
-                raise Exception("Значение очков не должно превышать %d" % max)
+                raise Exception("Значение очков не может превышать %d" % max)
+            if scores < 0:
+                raise Exception("Значение очков не может быть отрицательным")
         except ValueError:
             QMessageBox.about(self.form, "Ошибка ввода", "Значение очков должно быть числом")
             return
@@ -123,7 +131,32 @@ class MainForm(Ui_Main_Form):
         # update player's rank
         p.rank = current_rank
         self.rank.setCurrentText(p.rank.name)
-        self.sostavList.currentItem().setText(2, p.rank.name)
+        self.sostavList.currentItem().setText(2, p.rank.name)    
+
+    def change_add_score(self):
+        # if scores is empty set zero
+        scores = self.scoresAdd.text()
+        if scores == "":
+            scores = 0
+            self.scoresAdd.setText("0")
+
+    def plus_minus_scores(self, func):
+        # raise exception if value is not float
+        try:                
+            scores = float(self.scoresAdd.text())
+        except ValueError:
+            QMessageBox.about(self.form, "Ошибка ввода", "Значение очков должно быть числом")
+        else:
+            # sum scores and emit text changed event
+            newScores = func(float(self.scores.text()), scores)
+            self.scores.setText('%.2f' % newScores)
+            self.change_score()
+
+    def add_scores(self):
+        self.plus_minus_scores(lambda x, y: x + y)
+
+    def sub_scores(self):
+        self.plus_minus_scores(lambda x, y: x - y)
 
     def save(self):
         # save all changes
