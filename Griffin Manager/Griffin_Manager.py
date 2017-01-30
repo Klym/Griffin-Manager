@@ -6,7 +6,7 @@ import sqlalchemy
 
 from quamash import QEventLoop
 from sqlalchemy.orm import sessionmaker
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QStatusBar, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QStatusBar, QMessageBox, QFileDialog
 from PyQt5.QtCore import QTimer
 
 from griffin_ui import Ui_Main_Form
@@ -179,6 +179,30 @@ class MainForm(Ui_Main_Form):
         # cancel all changes
         session.rollback()
         self.fill_data()
+
+    def export(self):
+        # select path to export
+        path = QFileDialog.getSaveFileName(self.form, 'Выберите файл', '', 'Text File (*.txt)')
+        if path[0] == '':
+            return
+        # generate export format
+        fmt = '{num}. {name} -'
+        if self.scoresCheckBox.isChecked():
+            fmt += ' {scores:.2f}'
+        if self.rankCheckBox.isChecked():
+            fmt +=  ' {rank}.'
+        if self.levelCheckBox.isChecked():
+            fmt += ' ({level})'
+        if fmt[-1] == '-':
+            fmt = fmt[:-2]
+        # write data to selected file
+        with open(path[0], 'w') as file:
+            for i, player in enumerate(self.players):
+                w_str = fmt.format(num=(i+1), name=player.name, scores=player.scores, rank=player.rank.name, level=player.level)
+                file.write(w_str + '\n')
+        # inform user in status bar
+        self.statusBar.showMessage("Сохранено: " + path[0])
+        QTimer.singleShot(4000, self.ready)
 
 if __name__ == "__main__":
     engine = sqlalchemy.create_engine("sqlite:///griffin.db")
