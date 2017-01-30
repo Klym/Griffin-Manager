@@ -68,6 +68,7 @@ class MainForm(Ui_Main_Form):
         self.matches.setText('%d' % p.matches)
         self.winrate.setText(('%.1f' % p.winrate) + '%')
         self.avgExp.setText('%d' % p.avg_stat)
+        self.lastUpdate.setText(p.last_update.strftime("%d.%m.%Y %H:%M:%S"))
 
     def change_rank(self):
         # get selected player's and rank's objects
