@@ -6,13 +6,14 @@ import sqlalchemy
 
 from quamash import QEventLoop
 from sqlalchemy.orm import sessionmaker
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QStatusBar
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QStatusBar, QMessageBox
 
 from griffin_ui import Ui_Main_Form
 from griffin_db import Player, Rank
 
 class MainForm(Ui_Main_Form):
     def __init__(self, form):
+        self.form = form
         self.setupUi(form)
         
         # set status bar
@@ -87,10 +88,22 @@ class MainForm(Ui_Main_Form):
         self.sostavList.currentItem().setText(2, r.name)
 
     def change_score(self):
+        # raise exception if value is not float or gt max scores
+        try:
+            scores = float(self.scores.text())
+            max = self.ranks[-1].scores
+            if scores > max:
+                raise Exception("Значение очков не должно превышать %d" % max)
+        except ValueError:
+            QMessageBox.about(self.form, "Ошибка ввода", "Значение очков должно быть числом")
+            return
+        except Exception as ex:
+            QMessageBox.about(self.form, "Ошибка ввода", ex.args[0])
+            return
+        
         # get selected player's object and new scores
         p_index = self.sostavList.currentIndex().row()
         p = self.players[p_index]
-        scores = float(self.scores.text())
 
         # update player's scores
         p.scores = scores
