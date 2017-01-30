@@ -32,9 +32,6 @@ class MainForm(Ui_Main_Form):
         self.select_data()
         self.fill_data()
 
-        # set first item selected
-        self.sostavList.setCurrentItem(self.sostavList.topLevelItem(0))
-
     def select_data(self):
         # select players
         self.players = [p for p in session.query(Player).order_by(Player.scores.desc()).all()]
@@ -46,10 +43,15 @@ class MainForm(Ui_Main_Form):
             self.rank.addItem(rank.name)
 
     def fill_data(self):
-        # clear list and fill it sorting by scores
+        # clear list, sort players by scores and fill
         self.sostavList.clear()
-        for player in sorted(self.players, key=lambda x: x.scores, reverse=True):
+        self.players.sort(key=lambda x: x.scores, reverse=True)
+        for player in self.players:
             QTreeWidgetItem(self.sostavList, [player.name, '%.2f' % player.scores, player.rank.name, '%s' % player.level])
+
+        # set first item selected
+        self.sostavList.setCurrentItem(self.sostavList.topLevelItem(0))
+
 
     def update_info(self):
         # get selected player's object
@@ -131,9 +133,6 @@ class MainForm(Ui_Main_Form):
         # cancel all changes
         session.rollback()
         self.fill_data()
-
-        # set first item selected
-        self.sostavList.setCurrentItem(self.sostavList.topLevelItem(0))
 
 if __name__ == "__main__":
     engine = sqlalchemy.create_engine("sqlite:///griffin.db")

@@ -172,6 +172,7 @@ class Ui_Main_Form(object):
         self.scores.textEdited.connect(self.change_score)
         self.saveScoresButton.clicked.connect(self.save)
         self.cancelScoresButton.clicked.connect(self.cancel)
+        self.sortButton.clicked.connect(self.fill_data)
         QtCore.QMetaObject.connectSlotsByName(Main_Form)
 
     def retranslateUi(self, Main_Form):
