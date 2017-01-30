@@ -7,6 +7,7 @@ import sqlalchemy
 from quamash import QEventLoop
 from sqlalchemy.orm import sessionmaker
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QStatusBar, QMessageBox
+from PyQt5.QtCore import QTimer
 
 from griffin_ui import Ui_Main_Form
 from griffin_db import Player, Rank
@@ -18,8 +19,13 @@ class MainForm(Ui_Main_Form):
         
         # set status bar
         self.statusBar = QStatusBar()
-        self.statusBar.showMessage("Готово")
         form.setStatusBar(self.statusBar)
+
+        # set checked flags of export settings
+        self.fileRadio.setChecked(True)
+        self.scoresCheckBox.setChecked(True)
+        self.rankCheckBox.setChecked(True)
+        self.levelCheckBox.setChecked(True)
 
         # set header of list
         header = QTreeWidgetItem(["Позывной", "Очки", "Звание", "Уровень"])
@@ -29,8 +35,13 @@ class MainForm(Ui_Main_Form):
         self.sostavList.header().resizeSection(2, 120)
         self.sostavList.header().resizeSection(3, 40)
 
+        # select and bind data
         self.select_data()
+        self.ready()
         self.fill_data()
+
+    def ready(self):
+        self.statusBar.showMessage("Игроков: %d" % len(self.players))
 
     def select_data(self):
         # select players
@@ -159,8 +170,10 @@ class MainForm(Ui_Main_Form):
         self.plus_minus_scores(lambda x, y: x - y)
 
     def save(self):
-        # save all changes
+        # save all changes and inform user about it
         session.commit()
+        self.statusBar.showMessage("Изменения сохранены")
+        QTimer.singleShot(3000, self.ready)
 
     def cancel(self):
         # cancel all changes
