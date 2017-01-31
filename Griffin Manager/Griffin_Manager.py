@@ -7,6 +7,7 @@ import sqlalchemy
 from quamash import QEventLoop
 from sqlalchemy.orm import sessionmaker
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QStatusBar, QMessageBox, QFileDialog
+from PyQt5.QtGui import QClipboard
 from PyQt5.QtCore import QTimer
 
 from griffin_ui import Ui_Main_Form
@@ -181,10 +182,13 @@ class MainForm(Ui_Main_Form):
         self.fill_data()
 
     def export(self):
-        # select path to export
-        path = QFileDialog.getSaveFileName(self.form, 'Выберите файл', '', 'Text File (*.txt)')
-        if path[0] == '':
-            return
+        # export data to file or clipboard
+        if self.fileRadio.isChecked():
+            self.export_to_file()
+        else:
+            self.export_to_clipboard()
+
+    def generate_export_data(self):
         # generate export format
         fmt = '{num}. {name} -'
         if self.scoresCheckBox.isChecked():
@@ -195,10 +199,28 @@ class MainForm(Ui_Main_Form):
             fmt += ' ({level})'
         if fmt[-1] == '-':
             fmt = fmt[:-2]
+
+        # yield formatted string
+        for i, player in enumerate(self.players):
+            yield fmt.format(num=(i+1), name=player.name, scores=player.scores, rank=player.rank.name, level=player.level)
+
+    def export_to_clipboard(self):
+        # generate formatted text and copy to clipboard
+        text = '\n'.join(w_str for w_str in self.generate_export_data())
+        QClipboard.setText(QApplication.clipboard(), text)
+
+        # inform user in status bar
+        self.statusBar.showMessage("Скопировано в буфер обмена.")
+        QTimer.singleShot(4000, self.ready)
+
+    def export_to_file(self):
+        # select path to export
+        path = QFileDialog.getSaveFileName(self.form, 'Выберите файл', '', 'Text File (*.txt)')
+        if path[0] == '':
+            return       
         # write data to selected file
         with open(path[0], 'w') as file:
-            for i, player in enumerate(self.players):
-                w_str = fmt.format(num=(i+1), name=player.name, scores=player.scores, rank=player.rank.name, level=player.level)
+            for w_str in self.generate_export_data():
                 file.write(w_str + '\n')
         # inform user in status bar
         self.statusBar.showMessage("Сохранено: " + path[0])
