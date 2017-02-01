@@ -4,7 +4,7 @@ import sys
 import asyncio
 import sqlalchemy
 
-from itertools import filterfalse
+from datetime import datetime
 from quamash import QEventLoop
 from sqlalchemy.orm import sessionmaker
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QStatusBar, QMessageBox, QFileDialog
@@ -60,7 +60,7 @@ class MainForm(Ui_Main_Form):
         # clear list, sort players by scores and fill
         self.sostavList.clear()
         self.players.sort(key=lambda x: x.scores, reverse=True)
-        for player in self.players:
+        for player in list(self.players):
             QTreeWidgetItem(self.sostavList, [player.name, '%.2f' % player.scores, player.rank.name, '%s' % player.level])
 
         # set first item selected
@@ -230,19 +230,42 @@ class MainForm(Ui_Main_Form):
 
     def update(self):
         future = asyncio.ensure_future(get_players(self))
-        future.add_done_callback(self.update_ui)
+        future.add_done_callback(self.update_model)
 
-    def update_ui(self, players):
+    # callback function, activates when response is ready
+    def update_model(self, players):
         # delete players who does'n exist in response
-        players_to_delete = list(filterfalse(lambda x: x.name in [p['nickname'] for p in players.result()], self.players))
-        for player in players_to_delete:
+        players_to_delete = filter(lambda x: x.name not in [p['nickname'] for p in players.result()], self.players)
+        for player in list(players_to_delete):
             self.players.remove(player)
             session.delete(player)
+        # add players who doesn't exist in local storage but had came in response
+        players_to_add = list(filter(lambda x: x['nickname'] not in [p.name for p in self.players], players.result()))
+        # create db objects from json
+        players_to_add = list(map(self.create_players , players_to_add))
+        self.players += players_to_add
         self.fill_data()
         session.commit()
 
+    def create_players(self, x):
+        player = Player(name=x['nickname'],
+                       scores=0, 
+                       rank_id=1, 
+                       level=x['progress']['level'],
+                       experience=x['progress']['experience'],
+                       kills=x['total']['kills'],
+                       dies=x['total']['dies'],
+                       kd=x['total']['kd'],
+                       matches=x['total']['matches'],
+                       victories=x['total']['victories'],
+                       winrate=x['total']['winRate'],
+                       avg_stat=x['total']['scoreAvg'],
+                       last_update=datetime.now())
+        player.rank = self.ranks[0]
+        return player
+
 if __name__ == "__main__":
-    engine = sqlalchemy.create_engine("sqlite:///griffin.db")
+    engine = sqlalchemy.create_engine("sqlite:///griffin.db", echo=True)
     Session = sessionmaker(bind=engine)
     session = Session()
     
