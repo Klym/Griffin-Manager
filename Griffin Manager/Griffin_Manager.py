@@ -4,6 +4,7 @@ import sys
 import asyncio
 import sqlalchemy
 
+from itertools import filterfalse
 from quamash import QEventLoop
 from sqlalchemy.orm import sessionmaker
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QStatusBar, QMessageBox, QFileDialog
@@ -12,6 +13,7 @@ from PyQt5.QtCore import QTimer
 
 from griffin_ui import Ui_Main_Form
 from griffin_db import Player, Rank
+from async_players import get_players
 
 class MainForm(Ui_Main_Form):
     def __init__(self, form):
@@ -225,6 +227,19 @@ class MainForm(Ui_Main_Form):
         # inform user in status bar
         self.statusBar.showMessage("Сохранено: " + path[0])
         QTimer.singleShot(4000, self.ready)
+
+    def update(self):
+        future = asyncio.ensure_future(get_players(self))
+        future.add_done_callback(self.update_ui)
+
+    def update_ui(self, players):
+        # delete players who does'n exist in response
+        players_to_delete = list(filterfalse(lambda x: x.name in [p['nickname'] for p in players.result()], self.players))
+        for player in players_to_delete:
+            self.players.remove(player)
+            session.delete(player)
+        self.fill_data()
+        session.commit()
 
 if __name__ == "__main__":
     engine = sqlalchemy.create_engine("sqlite:///griffin.db")

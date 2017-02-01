@@ -176,6 +176,7 @@ class Ui_Main_Form(object):
         self.saveScoresButton.clicked.connect(self.save)
         self.cancelScoresButton.clicked.connect(self.cancel)
         self.saveButton.clicked.connect(self.export)
+        self.updateButton.clicked.connect(self.update)
         self.sortButton.clicked.connect(self.fill_data)
         QtCore.QMetaObject.connectSlotsByName(Main_Form)
 
