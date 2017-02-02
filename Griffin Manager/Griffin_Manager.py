@@ -60,7 +60,7 @@ class MainForm(Ui_Main_Form):
         # clear list, sort players by scores and fill
         self.sostavList.clear()
         self.players.sort(key=lambda x: x.scores, reverse=True)
-        for player in list(self.players):
+        for player in self.players:
             QTreeWidgetItem(self.sostavList, [player.name, '%.2f' % player.scores, player.rank.name, '%s' % player.level])
 
         # set first item selected
@@ -221,7 +221,7 @@ class MainForm(Ui_Main_Form):
         if path[0] == '':
             return       
         # write data to selected file
-        with open(path[0], 'w') as file:
+        with open(path[0], 'w', encoding='utf-8') as file:
             for w_str in self.generate_export_data():
                 file.write(w_str + '\n')
         # inform user in status bar
