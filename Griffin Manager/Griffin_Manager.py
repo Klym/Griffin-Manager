@@ -151,17 +151,21 @@ class MainForm(Ui_Main_Form):
         self.sostavList.currentItem().setText(1, '%.2f' % scores)
 
         # detect new rank
+        self.find_rank(scores)
+
+        # update player's rank
+        p.rank = self.find_rank(scores)
+        self.rank.setCurrentText(p.rank.name)
+        self.sostavList.currentItem().setText(2, p.rank.name)    
+
+    def find_rank(self, scores):
         current_rank = None
-        for rank in self.ranks:
+        for rank in self.ranks[:-1]:
             if scores >= rank.scores:
                 current_rank = rank
             else:
                 break
-
-        # update player's rank
-        p.rank = current_rank
-        self.rank.setCurrentText(p.rank.name)
-        self.sostavList.currentItem().setText(2, p.rank.name)    
+        return current_rank
 
     def change_add_score(self):
         # if scores is empty set zero
@@ -266,14 +270,16 @@ class MainForm(Ui_Main_Form):
                 # skip all players instead of existing in local db
                 continue
 
-        #resp = await get_stats(self)
-
         # add players who doesn't exist in local storage but had came in response
         players_to_add = list(filter(lambda p: p not in self.players, players))
         # create db objects from json
         create_player_func = partial(self.players.create_player, self.ranks[0])
         players_to_add = list(map(create_player_func, players_to_add))
         self.players += players_to_add
+
+        # get players staistics and recount scores
+        updated_cnt = await get_stats(self)
+
         self.fill_data()
         self.ready()
         session.commit()

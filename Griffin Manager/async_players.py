@@ -31,25 +31,51 @@ async def get_players(wnd):
 async def get_stats(wnd):
     loop = asyncio.get_event_loop()
     futures = {}
-    t0 = time.time()
     with QThreadExecutor(35) as executor:
         # prepare future objects and associate it with players db objects
         for player in wnd.players:
             url = "https://survarium.pro/api/v2/players/%s/stats" % player.name
             params = {'limit': 50, 'skip': 0}
             future = loop.run_in_executor(executor, send_request, url, params)
-            futures[future] = player
+            futures[future] = (player, url, params)
         # iter by future objects and read responses
         for future in futures.keys():
-            player = futures[future]
+            # unpack tupe associated with current future
+            player, url, params = futures[future]
+            scores_to_add = 0
             try:
                 response = await future
-                print(player, response["total"])
+                # if the player is new set last match id
+                if player.match_id == 0:
+                    player.match_id = response['data'][0]['match']['id']
+                else:
+                    # remember las match id and go to add scores
+                    last_match_id = response['data'][0]['match']['id']
+                    is_next = True
+                    while is_next:
+                        for match in response['data']:
+                            if player.match_id == match['match']['id']:
+                                # if we found last match on this page break from loops
+                                is_next = False
+                                break
+                            scores_to_add += match['score'] * 0.01
+                        else:
+                            # if last match doesn't on this page, get the next one
+                            params['skip'] += 50
+                            response = await loop.run_in_executor(executor, send_request, url, params)
+                    # set new scores and rank
+                    player.match_id = last_match_id
+                    player.scores += scores_to_add
+                    if player.scores < 0:
+                        player.scores = 0
+                    if  player.scores > wnd.ranks[-1].scores:
+                        player.scores = wnd.ranks[-1].scores
+                    # find rank by scores
+                    player.rank = wnd.find_rank(player.scores)
             except requests.exceptions.ConnectionError:
                 QMessageBox.about(wnd.form, "Ошибка соединения", "Не удалось установить соединение с survarium.pro")
                 break
-    elapsed = time.time() - t0
-    print("Elapses: %.3f" % elapsed)
+    return len(futures)
 
 def send_request(url, params):
     response = requests.get(url, params=params)
