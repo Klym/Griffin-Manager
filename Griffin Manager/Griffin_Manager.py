@@ -15,7 +15,7 @@ from PyQt5.QtCore import QTimer
 from griffin_ui import Ui_Main_Form
 from griffin_db import Player, Rank
 from players_list import PlayersList
-from async_players import get_players
+from async_players import get_players, get_stats
 
 class MainForm(Ui_Main_Form):
     def __init__(self, form):
@@ -246,26 +246,30 @@ class MainForm(Ui_Main_Form):
 
     def update(self):
         self.statusBar.showMessage("Синхронизация с survarium.pro...")
-        future = asyncio.ensure_future(get_players(self))
-        future.add_done_callback(self.update_model)
+        future = asyncio.ensure_future(self.update_model())
 
-    # callback function, activates when response is ready, updates model and send requests to get stats
-    def update_model(self, players):
+    # update model and send requests to get stats
+    async def update_model(self):
+        players = await get_players(self)
+        
         # delete players who does'n exist in response
-        players_to_delete = filter(lambda x: x.name not in [p['nickname'] for p in players.result()], self.players)
+        players_to_delete = filter(lambda x: x.name not in [p['nickname'] for p in players], self.players)
         for player in list(players_to_delete):
             self.players.remove(player)
             session.delete(player)
 
         # update players
-        for p in players.result():
+        for p in players:
             try:
                 self.players.update_player(p)
             except IndexError:
+                # skip all players instead of existing in local db
                 continue
 
+        #resp = await get_stats(self)
+
         # add players who doesn't exist in local storage but had came in response
-        players_to_add = list(filter(lambda p: p not in self.players, players.result()))
+        players_to_add = list(filter(lambda p: p not in self.players, players))
         # create db objects from json
         create_player_func = partial(self.players.create_player, self.ranks[0])
         players_to_add = list(map(create_player_func, players_to_add))
