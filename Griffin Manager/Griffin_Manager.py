@@ -249,7 +249,7 @@ class MainForm(Ui_Main_Form):
         future = asyncio.ensure_future(get_players(self))
         future.add_done_callback(self.update_model)
 
-    # callback function, activates when response is ready
+    # callback function, activates when response is ready, updates model and send requests to get stats
     def update_model(self, players):
         # delete players who does'n exist in response
         players_to_delete = filter(lambda x: x.name not in [p['nickname'] for p in players.result()], self.players)
@@ -270,7 +270,6 @@ class MainForm(Ui_Main_Form):
         create_player_func = partial(self.players.create_player, self.ranks[0])
         players_to_add = list(map(create_player_func, players_to_add))
         self.players += players_to_add
-        print(self.players)
         self.fill_data()
         self.ready()
         session.commit()
@@ -286,5 +285,6 @@ if __name__ == "__main__":
         window = QMainWindow()
         ui = MainForm(window)
         window.show()
+        app.exec()
         loop.run_forever()
     session.close()
