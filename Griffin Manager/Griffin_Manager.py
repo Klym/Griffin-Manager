@@ -4,7 +4,7 @@ import sys
 import asyncio
 import sqlalchemy
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from quamash import QEventLoop
 from sqlalchemy.orm import sessionmaker
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QStatusBar, QMessageBox, QFileDialog
@@ -248,6 +248,7 @@ class MainForm(Ui_Main_Form):
         session.commit()
 
     def create_players(self, x):
+        # create database object of player
         player = Player(name=x['nickname'],
                        scores=0, 
                        rank_id=1, 
@@ -259,9 +260,10 @@ class MainForm(Ui_Main_Form):
                        matches=x['total']['matches'],
                        victories=x['total']['victories'],
                        winrate=x['total']['winRate'],
-                       avg_stat=x['total']['scoreAvg'],
-                       last_update=datetime.now())
+                       avg_stat=x['total']['scoreAvg'])
+        # set object of rank and parse last updated time
         player.rank = self.ranks[0]
+        player.last_update = datetime.strptime(x['updatedAt'], "%Y-%m-%dT%H:%M:%S.%fZ") + timedelta(hours=3)
         return player
 
 if __name__ == "__main__":
