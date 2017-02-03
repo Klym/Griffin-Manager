@@ -37,9 +37,6 @@ class Player(Base):
     avg_stat = Column(Integer)
     last_update = Column(DateTime)
 
-    #def __eq__(self, other):
-        #return self.name == other['nickname']
-
     def __repr__(self):
         return "<Player(name='%s', scores='%d', rank_id='%d', level='%d')>" % (self.name.encode('cp866', errors='replace').decode('cp866'), self.scores, self.rank_id, self.level)
 

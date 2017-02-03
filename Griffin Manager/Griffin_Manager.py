@@ -4,7 +4,8 @@ import sys
 import asyncio
 import sqlalchemy
 
-from datetime import datetime, timedelta
+from functools import partial
+
 from quamash import QEventLoop
 from sqlalchemy.orm import sessionmaker
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QStatusBar, QMessageBox, QFileDialog
@@ -13,6 +14,7 @@ from PyQt5.QtCore import QTimer
 
 from griffin_ui import Ui_Main_Form
 from griffin_db import Player, Rank
+from players_list import PlayersList
 from async_players import get_players
 
 class MainForm(Ui_Main_Form):
@@ -48,7 +50,7 @@ class MainForm(Ui_Main_Form):
 
     def select_data(self):
         # select players
-        self.players = [p for p in session.query(Player).order_by(Player.scores.desc()).all()]
+        self.players = PlayersList([p for p in session.query(Player).order_by(Player.scores.desc()).all()])
             
         # select and bind ranks
         self.ranks = []
@@ -229,6 +231,7 @@ class MainForm(Ui_Main_Form):
         QTimer.singleShot(4000, self.ready)
 
     def update(self):
+        self.statusBar.showMessage("Синхронизация с survarium.pro...")
         future = asyncio.ensure_future(get_players(self))
         future.add_done_callback(self.update_model)
 
@@ -239,32 +242,24 @@ class MainForm(Ui_Main_Form):
         for player in list(players_to_delete):
             self.players.remove(player)
             session.delete(player)
-        # add players who doesn't exist in local storage but had came in response
-        players_to_add = list(filter(lambda x: x['nickname'] not in [p.name for p in self.players], players.result()))
-        # create db objects from json
-        players_to_add = list(map(self.create_players , players_to_add))
-        self.players += players_to_add
-        self.fill_data()
-        session.commit()
 
-    def create_players(self, x):
-        # create database object of player
-        player = Player(name=x['nickname'],
-                       scores=0, 
-                       rank_id=1, 
-                       level=x['progress']['level'],
-                       experience=x['progress']['experience'],
-                       kills=x['total']['kills'],
-                       dies=x['total']['dies'],
-                       kd=x['total']['kd'],
-                       matches=x['total']['matches'],
-                       victories=x['total']['victories'],
-                       winrate=x['total']['winRate'],
-                       avg_stat=x['total']['scoreAvg'])
-        # set object of rank and parse last updated time
-        player.rank = self.ranks[0]
-        player.last_update = datetime.strptime(x['updatedAt'], "%Y-%m-%dT%H:%M:%S.%fZ") + timedelta(hours=3)
-        return player
+        # update players
+        for p in players.result():
+            try:
+                self.players.update_player(p)
+            except IndexError:
+                continue
+
+        # add players who doesn't exist in local storage but had came in response
+        players_to_add = list(filter(lambda p: p not in self.players, players.result()))
+        # create db objects from json
+        create_player_func = partial(self.players.create_player, self.ranks[0])
+        players_to_add = list(map(create_player_func, players_to_add))
+        self.players += players_to_add
+        print(self.players)
+        self.fill_data()
+        self.ready()
+        session.commit()
 
 if __name__ == "__main__":
     engine = sqlalchemy.create_engine("sqlite:///griffin.db", echo=True)
