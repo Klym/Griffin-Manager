@@ -23,6 +23,7 @@ async def get_players(wnd):
             try:
                 response = await future
                 players += response['data']
+                wnd.progressBar.setValue(wnd.progressBar.value() + 2.5)
             except requests.exceptions.ConnectionError:
                 QMessageBox.about(wnd.form, "Ошибка соединения", "Не удалось установить соединение с survarium.pro")
                 break
@@ -72,9 +73,13 @@ async def get_stats(wnd):
                         player.scores = wnd.ranks[-1].scores
                     # find rank by scores
                     player.rank = wnd.find_rank(player.scores)
+
+                    # update progress bar
+                    wnd.progressBar.setValue(wnd.progressBar.value() + (95 / len(futures)))
             except requests.exceptions.ConnectionError:
                 QMessageBox.about(wnd.form, "Ошибка соединения", "Не удалось установить соединение с survarium.pro")
                 break
+    wnd.progressBar.setValue(100)
     return len(futures)
 
 def send_request(url, params):

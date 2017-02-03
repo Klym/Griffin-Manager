@@ -8,7 +8,7 @@ from functools import partial
 
 from quamash import QEventLoop
 from sqlalchemy.orm import sessionmaker
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QStatusBar, QMessageBox, QFileDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QStatusBar, QMessageBox, QFileDialog, QProgressBar
 from PyQt5.QtGui import QClipboard
 from PyQt5.QtCore import QTimer
 
@@ -249,8 +249,11 @@ class MainForm(Ui_Main_Form):
         QTimer.singleShot(4000, self.ready)
 
     def update(self):
-        self.statusBar.showMessage("Синхронизация с survarium.pro...")
+        self.statusBar.showMessage("Синхронизация с survarium.pro")
         future = asyncio.ensure_future(self.update_model())
+        self.progressBar = QProgressBar()
+        self.statusBar.insertPermanentWidget(0, self.progressBar)
+        self.progressBar.setValue(0)
 
     # update model and send requests to get stats
     async def update_model(self):
@@ -280,6 +283,8 @@ class MainForm(Ui_Main_Form):
         # get players staistics and recount scores
         updated_cnt = await get_stats(self)
 
+        # refresh gui
+        QTimer.singleShot(2000, lambda: self.statusBar.removeWidget(self.progressBar))
         self.fill_data()
         self.ready()
         session.commit()
