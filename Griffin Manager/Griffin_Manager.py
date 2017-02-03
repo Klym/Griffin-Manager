@@ -290,7 +290,7 @@ class MainForm(Ui_Main_Form):
         session.commit()
 
 if __name__ == "__main__":
-    engine = sqlalchemy.create_engine("sqlite:///griffin.db", echo=True)
+    engine = sqlalchemy.create_engine("sqlite:///griffin.db", echo=False)
     Session = sessionmaker(bind=engine)
     session = Session()
     
