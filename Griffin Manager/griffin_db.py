@@ -26,6 +26,7 @@ class Player(Base):
     name = Column(String, primary_key=True)
     scores = Column(Float)
     rank_id = Column(Integer, sqlalchemy.ForeignKey('ranks.id'))
+    match_id = Column(BigInteger)
     level = Column(Integer)
     experience = Column(BigInteger)
     kills = Column(Integer)
@@ -41,16 +42,24 @@ class Player(Base):
         return "<Player(name='%s', scores='%d', rank_id='%d', level='%d')>" % (self.name.encode('cp866', errors='replace').decode('cp866'), self.scores, self.rank_id, self.level)
 
 if __name__ == "__main__":
-    engine = sqlalchemy.create_engine("sqlite:///griffin.db", echo=False)
-    #Base.metadata.create_all(engine)
+    engine = sqlalchemy.create_engine("sqlite:///griffin.db", echo=True)
+    Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
-    """session.add(Player(name="Клым", scores=0, rank_id=1, level=78, experience=100654, kills=120934, dies=60234, kd=1.58, matches=80346, victories=40324, winrate=49.8, avg_stat=321, last_update=datetime(2017, 1, 30, 5, 10, 12)))
-    session.add(Player(name="Лескон", scores=1000, rank_id=4, level=67, experience=40365, kills=69023, dies=70123, kd=0.81, matches=32874, victories=14876, winrate=36.1, avg_stat=248, last_update=datetime(2017, 1, 30, 2, 23, 45)))
-    session.add(Player(name="Солярис", scores=700, rank_id=3, level=69, experience=56912, kills=80493, dies=70123, kd=1.17, matches=35014, victories=10832, winrate=40.7, avg_stat=267, last_update=datetime(2017, 1, 29, 18, 16, 23)))
+    session.add(Rank(id = 1, name = "Выживший", scores = 0))
+    session.add(Rank(id = 2, name = "Адепт", scores = 200))
+    session.add(Rank(id = 3, name = "Матерый", scores = 630))
+    session.add(Rank(id = 4, name = "Ловчий", scores = 900))
+    session.add(Rank(id = 5, name = "Рейтар", scores = 1800))
+    session.add(Rank(id = 6, name = "Хорунжий ", scores = 3150))
+    session.add(Rank(id = 7, name = "Ветеран", scores = 4500))
+    session.add(Rank(id = 8, name = "Центурион", scores = 5850))
+    session.add(Rank(id = 9, name = "Пилигрим", scores = 7200))
+    session.add(Rank(id = 10, name = "Сталкер", scores = 8550))
+    session.add(Rank(id = 11, name = "Волхв", scores = 9900))
+    session.add(Rank(id = 12, name = "Хранитель", scores = 11000))
+    session.add(Rank(id = 13, name = "Мастер", scores = 11000))
     session.commit()
-    session.add(Player(name="Для удаления игрок", scores=700, rank_id=3, level=69, experience=56912, kills=80493, dies=70123, kd=1.17, matches=35014, victories=10832, winrate=40.7, avg_stat=267, last_update=datetime(2017, 1, 29, 18, 16, 23)))
-    session.commit()"""
-    for player in session.query(Player).all():
-        print(player, player.rank)
+    """for player in session.query(Player).all():
+        print(player, player.rank)"""
     session.close()

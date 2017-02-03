@@ -54,17 +54,18 @@ class PlayersList(UserList):
     def create_player(cls, rank, x):
         # create database object of player
         player = Player(name=x['nickname'],
-                        scores=0, 
-                        rank_id=1, 
-                        level=x['progress']['level'],
-                        experience=x['progress']['experience'],
-                        kills=x['total']['kills'],
-                        dies=x['total']['dies'],
-                        kd=x['total']['kd'],
-                        matches=x['total']['matches'],
-                        victories=x['total']['victories'],
-                        winrate=x['total']['winRate'],
-                        avg_stat=x['total']['scoreAvg'])
+                        scores = 0,
+                        rank_id = 1,
+                        match_id = 0,
+                        level = x['progress']['level'],
+                        experience= x['progress']['experience'],
+                        kills = x['total']['kills'],
+                        dies = x['total']['dies'],
+                        kd = x['total']['kd'],
+                        matches = x['total']['matches'],
+                        victories = x['total']['victories'],
+                        winrate = x['total']['winRate'],
+                        avg_stat = x['total']['scoreAvg'])
         # set object of rank and parse last updated time
         player.rank = rank
         player.last_update = PlayersList.parse_datetime(x['updatedAt'], 3)

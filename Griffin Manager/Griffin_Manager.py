@@ -59,6 +59,19 @@ class MainForm(Ui_Main_Form):
             self.rank.addItem(rank.name)
 
     def fill_data(self):
+        # disable gui controls if database is empty
+        if len(self.players) == 0:
+            self.scores.setDisabled(True)
+            self.plusScoresButton.setDisabled(True)
+            self.plusScoresButton_2.setDisabled(True)
+            self.saveButton.setDisabled(True)
+            return
+        # else enable controls
+        self.scores.setDisabled(False)
+        self.plusScoresButton.setDisabled(False)
+        self.plusScoresButton_2.setDisabled(False)
+        self.saveButton.setDisabled(False)
+
         # clear list, sort players by scores and fill
         self.sostavList.clear()
         self.players.sort(key=lambda x: x.scores, reverse=True)
@@ -67,7 +80,6 @@ class MainForm(Ui_Main_Form):
 
         # set first item selected
         self.sostavList.setCurrentItem(self.sostavList.topLevelItem(0))
-
 
     def update_info(self):
         # get selected player's object
@@ -89,6 +101,8 @@ class MainForm(Ui_Main_Form):
         self.lastUpdate.setText(p.last_update.strftime("%d.%m.%Y %H:%M:%S"))
 
     def change_rank(self):
+        if len(self.players) == 0:
+            return
         # get selected player's and rank's objects
         p_index = self.sostavList.currentIndex().row()
         r_index = self.rank.currentIndex()
@@ -158,7 +172,7 @@ class MainForm(Ui_Main_Form):
 
     def plus_minus_scores(self, func):
         # raise exception if value is not float
-        try:                
+        try:
             scores = float(self.scoresAdd.text())
         except ValueError:
             QMessageBox.about(self.form, "Ошибка ввода", "Значение очков должно быть числом")
