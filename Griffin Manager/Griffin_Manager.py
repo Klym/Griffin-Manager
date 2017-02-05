@@ -7,7 +7,7 @@ from functools import partial
 from requests.exceptions import ConnectionError
 
 from sqlalchemy.orm import sessionmaker
-from PyQt5.QtWidgets import QTreeWidgetItem, QStatusBar, QMessageBox, QFileDialog, QProgressBar
+from PyQt5.QtWidgets import QApplication, QTreeWidgetItem, QStatusBar, QMessageBox, QFileDialog, QProgressBar
 from PyQt5.QtGui import QClipboard, QBrush, QColor
 from PyQt5.QtCore import QTimer
 
