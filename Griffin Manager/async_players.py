@@ -28,6 +28,7 @@ async def get_players(wnd):
 async def get_stats(wnd):
     loop = asyncio.get_event_loop()
     futures = {}
+    updates = {}
     with QThreadExecutor(35) as executor:
         # prepare future objects and associate it with players db objects
         for player in wnd.players:
@@ -63,6 +64,8 @@ async def get_stats(wnd):
                 # set new scores and rank
                 player.match_id = last_match_id
                 player.scores += scores_to_add
+                if scores_to_add != 0:                    
+                    updates[player.name] = scores_to_add
                 if player.scores < 0:
                     player.scores = 0
                 if  player.scores > wnd.ranks[-1].scores:
@@ -72,7 +75,7 @@ async def get_stats(wnd):
                 # update progress bar
                 wnd.progressBar.setValue(wnd.progressBar.value() + (95 / len(futures)))
     wnd.progressBar.setValue(100)
-    return len(futures)
+    return updates
 
 def send_request(url, params):
     response = requests.get(url, params=params)

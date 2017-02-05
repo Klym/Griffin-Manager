@@ -10,7 +10,7 @@ from requests.exceptions import ConnectionError
 from quamash import QEventLoop
 from sqlalchemy.orm import sessionmaker
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QStatusBar, QMessageBox, QFileDialog, QProgressBar
-from PyQt5.QtGui import QClipboard
+from PyQt5.QtGui import QClipboard, QBrush, QColor
 from PyQt5.QtCore import QTimer
 
 from griffin_ui import Ui_Main_Form
@@ -37,8 +37,8 @@ class MainForm(Ui_Main_Form):
         header = QTreeWidgetItem(["Позывной", "Очки", "Звание", "Уровень"])
         self.sostavList.setHeaderItem(header)
         self.sostavList.header().resizeSection(0, 120)
-        self.sostavList.header().resizeSection(1, 70)
-        self.sostavList.header().resizeSection(2, 120)
+        self.sostavList.header().resizeSection(1, 100)
+        self.sostavList.header().resizeSection(2, 95)
         self.sostavList.header().resizeSection(3, 40)
 
         # select and bind data
@@ -62,7 +62,7 @@ class MainForm(Ui_Main_Form):
             self.ranks.append(rank)
             self.rank.addItem(rank.name)
 
-    def fill_data(self):
+    def fill_data(self, changes=None):
         # disable gui controls if database is empty
         if len(self.players) == 0:
             self.scores.setDisabled(True)
@@ -80,7 +80,17 @@ class MainForm(Ui_Main_Form):
         self.sostavList.clear()
         self.players.sort(key=lambda x: x.scores, reverse=True)
         for player in self.players:
-            QTreeWidgetItem(self.sostavList, [player.name, '%.2f' % player.scores, player.rank.name, '%s' % player.level])
+            item = QTreeWidgetItem(self.sostavList, [player.name, '%.2f' % player.scores, player.rank.name, '%s' % player.level])
+            # if players got scores set background and show bonuses
+            if not changes: continue
+            plus_sc = changes.get(player.name)
+            if plus_sc is None: continue
+            znak = "+"
+            if plus_sc < 0:
+                znak = "-"
+            item.setText(1, '%.2f (%s%.2f)' % (player.scores, znak, abs(plus_sc)))
+            for i in range(4):
+                item.setBackground(i, QBrush(QColor('#e8fbb2')))   
 
         # set first item selected
         self.sostavList.setCurrentItem(self.sostavList.topLevelItem(0))
@@ -290,14 +300,14 @@ class MainForm(Ui_Main_Form):
 
         # get players staistics and recount scores
         try:
-            updated_cnt = await get_stats(self)
+            updates = await get_stats(self)
         except ConnectionError:
             self.connection_error()
             return
 
         # refresh gui
         QTimer.singleShot(2000, self.remove_progress)
-        self.fill_data()
+        self.fill_data(changes=updates)
         self.ready()
         session.commit()
 
