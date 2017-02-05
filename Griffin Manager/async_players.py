@@ -79,4 +79,6 @@ async def get_stats(wnd):
 
 def send_request(url, params):
     response = requests.get(url, params=params)
+    if response.status_code != 200:
+        raise requests.exceptions.HTTPError("Ошибка %d. Данные по запросу не получены" % response.status_code)
     return response.json()

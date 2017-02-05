@@ -4,7 +4,7 @@ import asyncio
 import sqlalchemy
 
 from functools import partial
-from requests.exceptions import ConnectionError
+from requests.exceptions import ConnectionError, HTTPError
 
 from sqlalchemy.orm import sessionmaker
 from PyQt5.QtWidgets import QApplication, QTreeWidgetItem, QStatusBar, QMessageBox, QFileDialog, QProgressBar
@@ -270,6 +270,7 @@ class MainForm(Ui_Main_Form):
         self.progressBar = QProgressBar()
         self.statusBar.insertPermanentWidget(0, self.progressBar)
         self.progressBar.setValue(0)
+        self.updateButton.setDisabled(True)
 
     # update model and send requests to get stats
     async def update_model(self):
@@ -277,6 +278,12 @@ class MainForm(Ui_Main_Form):
             players = await get_players(self)
         except ConnectionError:
             self.connection_error()
+            return
+        except HTTPError as err:
+            self.connection_error(msg=err.args[0])
+            return
+        except Exception:
+            self.connection_error(msg="Неизвестная ошибка")
             return
 
         # delete players who does'n exist in response
@@ -306,15 +313,25 @@ class MainForm(Ui_Main_Form):
         except ConnectionError:
             self.connection_error()
             return
+        except HTTPError as err:
+            self.connection_error(msg=err.args[0])
+            return
+        except Exception:
+            self.connection_error(msg="Неизвестная ошибка")
+            return
 
         # refresh gui
         QTimer.singleShot(2000, self.remove_progress)
         self.fill_data(changes=updates)
         self.ready()
+        self.updateButton.setDisabled(False)
         session.commit()
 
-    def connection_error(self):
-        QMessageBox.about(self.form, "Ошибка соединения", "Не удалось установить соединение с survarium.pro")
+    def connection_error(self, msg=None):
+        if msg is None:
+            msg = "Не удалось установить соединение с survarium.pro"
+        QMessageBox.about(self.form, "Ошибка соединения", msg)
+        self.updateButton.setDisabled(False)
         self.remove_progress()
         self.statusBar.showMessage("Соединение прервано")
         QTimer.singleShot(2000, self.ready)
