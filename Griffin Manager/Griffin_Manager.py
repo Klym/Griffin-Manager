@@ -1,15 +1,13 @@
 ﻿# -*- coding: utf-8 -*-
 
-import sys
 import asyncio
 import sqlalchemy
 
 from functools import partial
 from requests.exceptions import ConnectionError
 
-from quamash import QEventLoop
 from sqlalchemy.orm import sessionmaker
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem, QStatusBar, QMessageBox, QFileDialog, QProgressBar
+from PyQt5.QtWidgets import QTreeWidgetItem, QStatusBar, QMessageBox, QFileDialog, QProgressBar
 from PyQt5.QtGui import QClipboard, QBrush, QColor
 from PyQt5.QtCore import QTimer
 
@@ -17,6 +15,10 @@ from griffin_ui import Ui_Main_Form
 from griffin_db import Player, Rank
 from players_list import PlayersList
 from async_players import get_players, get_stats
+
+engine = sqlalchemy.create_engine("sqlite:///griffin.db", echo=False)
+Session = sessionmaker(bind=engine)
+session = Session()
 
 class MainForm(Ui_Main_Form):
     def __init__(self, form):
@@ -316,18 +318,3 @@ class MainForm(Ui_Main_Form):
         self.remove_progress()
         self.statusBar.showMessage("Соединение прервано")
         QTimer.singleShot(2000, self.ready)
-
-if __name__ == "__main__":
-    engine = sqlalchemy.create_engine("sqlite:///griffin.db", echo=False)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    
-    app = QApplication(sys.argv)
-    with QEventLoop(app) as loop:
-        asyncio.set_event_loop(loop)
-        window = QMainWindow()
-        ui = MainForm(window)
-        window.show()
-        app.exec()
-        loop.run_forever()
-    session.close()
