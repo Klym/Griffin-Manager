@@ -5,6 +5,7 @@ import asyncio
 import sqlalchemy
 
 from functools import partial
+from requests.exceptions import ConnectionError
 
 from quamash import QEventLoop
 from sqlalchemy.orm import sessionmaker
@@ -47,6 +48,9 @@ class MainForm(Ui_Main_Form):
 
     def ready(self):
         self.statusBar.showMessage("Игроков: %d" % len(self.players))
+
+    def remove_progress(self):
+        self.statusBar.removeWidget(self.progressBar)
 
     def select_data(self):
         # select players
@@ -257,8 +261,12 @@ class MainForm(Ui_Main_Form):
 
     # update model and send requests to get stats
     async def update_model(self):
-        players = await get_players(self)
-        
+        try:
+            players = await get_players(self)
+        except ConnectionError:
+            self.connection_error()
+            return
+
         # delete players who does'n exist in response
         players_to_delete = filter(lambda x: x.name not in [p['nickname'] for p in players], self.players)
         for player in list(players_to_delete):
@@ -281,13 +289,23 @@ class MainForm(Ui_Main_Form):
         self.players += players_to_add
 
         # get players staistics and recount scores
-        updated_cnt = await get_stats(self)
+        try:
+            updated_cnt = await get_stats(self)
+        except ConnectionError:
+            self.connection_error()
+            return
 
         # refresh gui
-        QTimer.singleShot(2000, lambda: self.statusBar.removeWidget(self.progressBar))
+        QTimer.singleShot(2000, self.remove_progress)
         self.fill_data()
         self.ready()
         session.commit()
+
+    def connection_error(self):
+        QMessageBox.about(self.form, "Ошибка соединения", "Не удалось установить соединение с survarium.pro")
+        self.remove_progress()
+        self.statusBar.showMessage("Соединение прервано")
+        QTimer.singleShot(2000, self.ready)
 
 if __name__ == "__main__":
     engine = sqlalchemy.create_engine("sqlite:///griffin.db", echo=False)

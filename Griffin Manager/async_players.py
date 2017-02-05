@@ -20,13 +20,9 @@ async def get_players(wnd):
             future = loop.run_in_executor(executor, send_request, *params)
             futures.append(future)
         for future in futures:
-            try:
-                response = await future
-                players += response['data']
-                wnd.progressBar.setValue(wnd.progressBar.value() + 2.5)
-            except requests.exceptions.ConnectionError:
-                QMessageBox.about(wnd.form, "Ошибка соединения", "Не удалось установить соединение с survarium.pro")
-                break
+            response = await future
+            players += response['data']
+            wnd.progressBar.setValue(wnd.progressBar.value() + 2.5)
     return players
 
 async def get_stats(wnd):
@@ -39,46 +35,42 @@ async def get_stats(wnd):
             params = {'limit': 50, 'skip': 0}
             future = loop.run_in_executor(executor, send_request, url, params)
             futures[future] = (player, url, params)
+
         # iter by future objects and read responses
         for future in futures.keys():
             # unpack tupe associated with current future
             player, url, params = futures[future]
             scores_to_add = 0
-            try:
-                response = await future
-                # if the player is new set last match id
-                if player.match_id == 0:
-                    player.match_id = response['data'][0]['match']['id']
-                else:
-                    # remember las match id and go to add scores
-                    last_match_id = response['data'][0]['match']['id']
-                    is_next = True
-                    while is_next:
-                        for match in response['data']:
-                            if player.match_id == match['match']['id']:
-                                # if we found last match on this page break from loops
-                                is_next = False
-                                break
-                            scores_to_add += match['score'] * 0.01
-                        else:
-                            # if last match doesn't on this page, get the next one
-                            params['skip'] += 50
-                            response = await loop.run_in_executor(executor, send_request, url, params)
-                    # set new scores and rank
-                    player.match_id = last_match_id
-                    player.scores += scores_to_add
-                    if player.scores < 0:
-                        player.scores = 0
-                    if  player.scores > wnd.ranks[-1].scores:
-                        player.scores = wnd.ranks[-1].scores
-                    # find rank by scores
-                    player.rank = wnd.find_rank(player.scores)
-
-                    # update progress bar
-                    wnd.progressBar.setValue(wnd.progressBar.value() + (95 / len(futures)))
-            except requests.exceptions.ConnectionError:
-                QMessageBox.about(wnd.form, "Ошибка соединения", "Не удалось установить соединение с survarium.pro")
-                break
+            response = await future
+            # if the player is new set last match id
+            if player.match_id == 0:
+                player.match_id = response['data'][0]['match']['id']
+            else:
+                # remember las match id and go to add scores
+                last_match_id = response['data'][0]['match']['id']
+                is_next = True
+                while is_next:
+                    for match in response['data']:
+                        if player.match_id == match['match']['id']:
+                            # if we found last match on this page break from loops
+                            is_next = False
+                            break
+                        scores_to_add += match['score'] * 0.01
+                    else:
+                        # if last match doesn't on this page, get the next one
+                        params['skip'] += 50
+                        response = await loop.run_in_executor(executor, send_request, url, params)
+                # set new scores and rank
+                player.match_id = last_match_id
+                player.scores += scores_to_add
+                if player.scores < 0:
+                    player.scores = 0
+                if  player.scores > wnd.ranks[-1].scores:
+                    player.scores = wnd.ranks[-1].scores
+                # find rank by scores
+                player.rank = wnd.find_rank(player.scores)
+                # update progress bar
+                wnd.progressBar.setValue(wnd.progressBar.value() + (95 / len(futures)))
     wnd.progressBar.setValue(100)
     return len(futures)
 
