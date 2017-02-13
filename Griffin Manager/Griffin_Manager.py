@@ -2,6 +2,7 @@
 
 import asyncio
 import sqlalchemy
+from datetime import datetime
 
 from functools import partial
 from requests.exceptions import ConnectionError, HTTPError
@@ -238,7 +239,9 @@ class MainForm(Ui_Main_Form):
         if fmt[-1] == '-':
             fmt = fmt[:-2]
 
-        # yield formatted string
+        # yield current datetime and formatted player's strings
+        yield "Состав клана на {}".format(datetime.now().strftime("%d.%m.%Y %H:%M"))
+
         for i, player in enumerate(self.players):
             yield fmt.format(num=(i+1), name=player.name, scores=player.scores, rank=player.rank.name, level=player.level)
 
