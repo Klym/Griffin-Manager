@@ -3,5 +3,6 @@ Griffin Manager/*.pyproj
 Griffin Manager/*.db
 Griffin Manager/*.TMP
 Griffin Manager/*.exe
+Griffin Manager/config.py
 .vs/*
 *.sln

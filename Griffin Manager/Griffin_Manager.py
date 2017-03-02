@@ -3,6 +3,7 @@
 import asyncio
 import sqlalchemy
 from datetime import datetime
+from config import SQLALCHEMY_DATABASE_URI
 
 from functools import partial
 from requests.exceptions import ConnectionError, HTTPError
@@ -17,7 +18,7 @@ from griffin_db import Player, Rank
 from players_list import PlayersList
 from async_players import get_players, get_stats
 
-engine = sqlalchemy.create_engine("sqlite:///griffin.db", echo=False)
+engine = sqlalchemy.create_engine(SQLALCHEMY_DATABASE_URI, echo=False)
 Session = sessionmaker(bind=engine)
 session = Session()
 

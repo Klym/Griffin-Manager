@@ -1,9 +1,10 @@
 ﻿# -*- coding: utf-8 -*-
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, BigInteger, Integer, Float, String, DateTime
+from sqlalchemy import Column, BigInteger, Integer, Float, String, DateTime, text
 from sqlalchemy.orm import relationship, sessionmaker
 from datetime import datetime
+from config import SQLALCHEMY_DATABASE_URI
 import sqlalchemy, sys
 
 Base = declarative_base()
@@ -12,7 +13,7 @@ class Rank(Base):
     __tablename__ = "ranks"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String)
+    name = Column(String(255))
     scores = Column(Integer)
     
     player = relationship("Player", backref = "rank")
@@ -23,7 +24,7 @@ class Rank(Base):
 class Player(Base):
     __tablename__ = "players"
 
-    name = Column(String, primary_key=True)
+    name = Column(String(255), primary_key=True)
     scores = Column(Float)
     rank_id = Column(Integer, sqlalchemy.ForeignKey('ranks.id'))
     match_id = Column(BigInteger)
@@ -42,11 +43,11 @@ class Player(Base):
         return "<Player(name='%s', scores='%d', rank_id='%d', level='%d')>" % (self.name.encode('cp866', errors='replace').decode('cp866'), self.scores, self.rank_id, self.level)
 
 if __name__ == "__main__":
-    engine = sqlalchemy.create_engine("sqlite:///griffin.db", echo=True)
-    Base.metadata.create_all(engine)
+    engine = sqlalchemy.create_engine(SQLALCHEMY_DATABASE_URI)
+    # Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
-    session.add(Rank(id = 1, name = "Выживший", scores = 0))
+    """session.add(Rank(id = 1, name = "Выживший", scores = 0))
     session.add(Rank(id = 2, name = "Адепт", scores = 200))
     session.add(Rank(id = 3, name = "Матерый", scores = 630))
     session.add(Rank(id = 4, name = "Ловчий", scores = 900))
@@ -59,7 +60,7 @@ if __name__ == "__main__":
     session.add(Rank(id = 11, name = "Волхв", scores = 9900))
     session.add(Rank(id = 12, name = "Хранитель", scores = 11000))
     session.add(Rank(id = 13, name = "Мастер", scores = 11000))
-    session.commit()
-    """for player in session.query(Player).all():
-        print(player, player.rank)"""
+    session.commit()"""
+    for rank in session.query(Rank).all():
+        print(rank)
     session.close()
