@@ -14,6 +14,7 @@ from PyQt5.QtGui import QClipboard, QBrush, QColor
 from PyQt5.QtCore import QTimer
 
 from griffin_ui import Ui_Main_Form
+from async_open_ssh import run_process
 from griffin_db import Player, Rank
 from players_list import PlayersList
 from async_players import get_players, get_stats
@@ -21,6 +22,7 @@ from async_players import get_players, get_stats
 engine = sqlalchemy.create_engine(SQLALCHEMY_DATABASE_URI, echo=False)
 Session = sessionmaker(bind=engine)
 session = Session()
+ssh_process = None
 
 class MainForm(Ui_Main_Form):
     def __init__(self, form):
@@ -29,6 +31,7 @@ class MainForm(Ui_Main_Form):
         
         # set status bar
         self.statusBar = QStatusBar()
+        self.statusBar.showMessage("Соединение с базой данных...")
         form.setStatusBar(self.statusBar)
 
         # set checked flags of export settings
@@ -44,6 +47,14 @@ class MainForm(Ui_Main_Form):
         self.sostavList.header().resizeSection(1, 100)
         self.sostavList.header().resizeSection(2, 95)
         self.sostavList.header().resizeSection(3, 40)
+        
+        # wait for ssh connecting and select data
+        future_ssh = asyncio.ensure_future(run_process())
+        future_ssh.add_done_callback(self.get_data)
+
+    def get_data(self, future):
+        global ssh_process
+        ssh_process = future.result()
 
         # select and bind data
         self.select_data()
