@@ -1,5 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
 
+import sys
 import asyncio
 import sqlalchemy
 from datetime import datetime
@@ -8,6 +9,7 @@ from config import SQLALCHEMY_DATABASE_URI
 from functools import partial
 from requests.exceptions import ConnectionError, HTTPError
 
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 from PyQt5.QtWidgets import QApplication, QTreeWidgetItem, QStatusBar, QMessageBox, QFileDialog, QProgressBar
 from PyQt5.QtGui import QClipboard, QBrush, QColor
@@ -28,7 +30,8 @@ class MainForm(Ui_Main_Form):
     def __init__(self, form):
         self.form = form
         self.setupUi(form)
-        
+        self.set_controls_disabled()
+
         # set status bar
         self.statusBar = QStatusBar()
         self.statusBar.showMessage("Соединение с базой данных...")
@@ -54,10 +57,19 @@ class MainForm(Ui_Main_Form):
 
     def get_data(self, future):
         global ssh_process
-        ssh_process = future.result()
+        try:
+            ssh_process = future.result()
+        except FileNotFoundError:
+            sys.exit(QMessageBox.about(self.form, "Ошибка", "Не удается найти файл: plink.exe"))
+            return
+        try:
+            # select and bind data
+            self.select_data()
+        except OperationalError as ex:
+            exit_code = QMessageBox.about(self.form, "Ошибка соединения с базой данных", "Подключение не установлено, т.к. конечный компьютер отверг запрос на подключение")
+            sys.exit(exit_code)
 
-        # select and bind data
-        self.select_data()
+        self.set_controls_disabled(False)
         self.ready()
         self.fill_data()
 
@@ -66,6 +78,16 @@ class MainForm(Ui_Main_Form):
 
     def remove_progress(self):
         self.statusBar.removeWidget(self.progressBar)
+
+    def set_controls_disabled(self, disabled=True):
+        self.scores.setDisabled(disabled)
+        self.plusScoresButton.setDisabled(disabled)
+        self.plusScoresButton_2.setDisabled(disabled)
+        self.saveButton.setDisabled(disabled)
+        self.saveScoresButton.setDisabled(disabled)
+        self.cancelScoresButton.setDisabled(disabled)
+        self.updateButton.setDisabled(disabled)
+        self.sortButton.setDisabled(disabled)
 
     def select_data(self):
         # select players

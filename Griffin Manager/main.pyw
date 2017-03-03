@@ -1,5 +1,4 @@
 from quamash import QEventLoop
-from sqlalchemy.exc import OperationalError
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 
 import sys
@@ -21,10 +20,6 @@ with QEventLoop(app) as loop:
     try:
         ui = griffin.MainForm(window)
         window.show()
-    except OperationalError as ex:
-        msgBox = QMessageBox()
-        exit = msgBox.about(window, "Ошибка соединения с базой данных", "Подключение не установлено, т.к. конечный компьютер отверг запрос на подключение")
-        sys.exit(exit)
     except Exception as ex:
         msgBox = QMessageBox()
         exit = msgBox.about(window, "Ошибка", ex.args[0])
