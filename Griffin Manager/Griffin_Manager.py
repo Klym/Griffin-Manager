@@ -65,7 +65,8 @@ class MainForm(Ui_Main_Form):
         try:
             # select and bind data
             self.select_data()
-        except OperationalError as ex:
+        except OperationalError:
+            ssh_process.terminate()
             exit_code = QMessageBox.about(self.form, "Ошибка соединения с базой данных", "Подключение не установлено, т.к. конечный компьютер отверг запрос на подключение")
             sys.exit(exit_code)
 
