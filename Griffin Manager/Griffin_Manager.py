@@ -4,7 +4,7 @@ import sys
 import asyncio
 import sqlalchemy
 from datetime import datetime
-from config import SQLALCHEMY_DATABASE_URI
+from config import remote_db, SQLALCHEMY_DATABASE_URI
 
 from functools import partial
 from requests.exceptions import ConnectionError, HTTPError
@@ -51,11 +51,20 @@ class MainForm(Ui_Main_Form):
         self.sostavList.header().resizeSection(2, 95)
         self.sostavList.header().resizeSection(3, 40)
         
-        # wait for ssh connecting and select data
-        future_ssh = asyncio.ensure_future(run_process())
-        future_ssh.add_done_callback(self.get_data)
+        # wait for ssh connecting and select data if database is remote
+        if remote_db:
+            future_ssh = asyncio.ensure_future(run_process())
+            future_ssh.add_done_callback(self.get_data_remote)
+        else:
+            self.get_data()
 
-    def get_data(self, future):
+    def get_data(self):
+        self.select_data()
+        self.set_controls_disabled(False)
+        self.ready()
+        self.fill_data()
+
+    def get_data_remote(self, future):
         global ssh_process
         try:
             ssh_process = future.result()
@@ -249,14 +258,17 @@ class MainForm(Ui_Main_Form):
     def save(self):
         # save all changes and inform user about it
         session.commit()
-        self.players.save_dump()
+        if remote_db:
+            self.players.save_dump()
         self.statusBar.showMessage("Изменения сохранены")
         QTimer.singleShot(3000, self.ready)
 
     def cancel(self):
         # cancel all changes
         session.rollback()
-        changes = self.players.count_diff()
+        change = None
+        if remote_db:
+            changes = self.players.count_diff()
         self.fill_data(changes=changes)
 
     def export(self):
@@ -368,7 +380,8 @@ class MainForm(Ui_Main_Form):
         self.ready()
         self.updateButton.setDisabled(False)
         session.commit()
-        self.players.save_dump()
+        if remote_db:
+            self.players.save_dump()
 
     def connection_error(self, msg=None):
         if msg is None:
