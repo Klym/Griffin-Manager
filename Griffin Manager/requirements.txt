@@ -1,0 +1,6 @@
+PyMySQL==0.7.10
+PyQt5==5.8
+Quamash==0.5.5
+requests==2.13.0
+sip==4.19.1
+SQLAlchemy==1.1.6
