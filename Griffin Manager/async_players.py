@@ -4,13 +4,14 @@ import asyncio
 import requests
 import time
 
+from config import clan
 from quamash import QEventLoop, QThreadExecutor
 from PyQt5.QtWidgets import QMessageBox
 
 async def get_players(wnd):
     # send two request to get two pages of players
     loop = asyncio.get_event_loop()
-    url = "https://survarium.pro/api/v2/clans/Грифон/players/"
+    url = "https://survarium.pro/api/v2/clans/%s/players/" % clan
     to_do = [(url, {'limit': 50, 'skip': 0}), (url, {'limit': 50, 'skip': 50})]
     players = []
     futures = []
