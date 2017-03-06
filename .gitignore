@@ -4,5 +4,6 @@ Griffin Manager/*.db
 Griffin Manager/*.TMP
 Griffin Manager/*.exe
 Griffin Manager/config.py
+Griffin Manager/*.dump
 .vs/*
 *.sln

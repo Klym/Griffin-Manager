@@ -40,7 +40,7 @@ class Player(Base):
     last_update = Column(DateTime)
 
     def __repr__(self):
-        return "<Player(name='%s', scores='%d', rank_id='%d', level='%d')>" % (self.name.encode('cp866', errors='replace').decode('cp866'), self.scores, self.rank_id, self.level)
+        return "<Player(name='%s', scores='%.2f', rank_id='%d', level='%d')>" % (self.name.encode('cp866', errors='replace').decode('cp866'), self.scores, self.rank_id, self.level)
 
 if __name__ == "__main__":
     engine = sqlalchemy.create_engine(SQLALCHEMY_DATABASE_URI)

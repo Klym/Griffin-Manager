@@ -1,6 +1,7 @@
 ﻿# -*- coding: utf-8 -*-
 
 import reprlib
+import struct
 
 from griffin_db import Player
 
@@ -24,12 +25,13 @@ class PlayersList(UserList):
 
     def __contains__(self, item):
         if isinstance(item, dict):
-            count = len(list(filter(lambda x: x.name == item['nickname'], self.data)))
-            if count == 0:
-                return False
-            else:
-                return True
-        return super().__contains__(item)
+            func = lambda x: x.name == item['nickname']
+        elif isinstance(item, str):
+            func = lambda x: x.name == item
+        else:
+            return super().__contains__(item)
+        count = len(list(filter(func, self.data)))
+        return not count == 0
 
     def __repr__(self):
         myRepr = reprlib.Repr()
@@ -74,3 +76,35 @@ class PlayersList(UserList):
     @classmethod
     def parse_datetime(cls, strdatetime, hdelta):
         return datetime.strptime(strdatetime, "%Y-%m-%dT%H:%M:%S.%fZ") + timedelta(hours=hdelta)
+
+    def save_dump(self):
+        with open("players.dump", "wb") as file:
+            for player in self.data:
+                file.write(struct.pack("40sf", bytes(player.name.encode("utf-8")), player.scores))
+
+    def read_dump(self):
+        with open("players.dump", "rb") as file:
+            while True:
+                try:
+                    dump = struct.unpack("40sf", file.read(44))
+                    name = dump[0].rstrip(b'\0').decode('utf-8')
+                    yield (name, dump[1])
+                except:
+                    break
+
+    def count_diff(self):
+        """
+        Generate the dictionary 
+        that contains scores difference 
+        after connecting with database
+        """
+        diff = {}
+        for name, scores in self.read_dump():
+            try:
+                diff_sc = self.__getitem__(name).scores - round(scores, 2)
+            except IndexError:
+                continue
+            if diff_sc == 0:
+                continue
+            diff[name] = diff_sc
+        return diff

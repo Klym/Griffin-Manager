@@ -72,7 +72,9 @@ class MainForm(Ui_Main_Form):
 
         self.set_controls_disabled(False)
         self.ready()
-        self.fill_data()
+        changes = self.players.count_diff()
+        self.players.save_dump()
+        self.fill_data(changes=changes)
 
     def ready(self):
         self.statusBar.showMessage("Игроков: %d" % len(self.players))
@@ -247,13 +249,15 @@ class MainForm(Ui_Main_Form):
     def save(self):
         # save all changes and inform user about it
         session.commit()
+        self.players.save_dump()
         self.statusBar.showMessage("Изменения сохранены")
         QTimer.singleShot(3000, self.ready)
 
     def cancel(self):
         # cancel all changes
         session.rollback()
-        self.fill_data()
+        changes = self.players.count_diff()
+        self.fill_data(changes=changes)
 
     def export(self):
         # export data to file or clipboard
@@ -364,6 +368,7 @@ class MainForm(Ui_Main_Form):
         self.ready()
         self.updateButton.setDisabled(False)
         session.commit()
+        self.players.save_dump()
 
     def connection_error(self, msg=None):
         if msg is None:
