@@ -4,9 +4,16 @@ import asyncio
 import requests
 import time
 
-from config import clan
+from config import clan, remote_db
 from quamash import QEventLoop, QThreadExecutor
 from PyQt5.QtWidgets import QMessageBox
+
+async def commit(session, players):
+    loop = asyncio.get_event_loop()
+    with QThreadExecutor(1) as executor:
+        await loop.run_in_executor(executor, session.commit)
+        if remote_db:
+            await loop.run_in_executor(executor, players.save_dump)
 
 async def get_players(wnd):
     # send two request to get two pages of players

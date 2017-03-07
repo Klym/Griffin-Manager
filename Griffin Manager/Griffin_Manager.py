@@ -19,7 +19,7 @@ from griffin_ui import Ui_Main_Form
 from async_open_ssh import run_process
 from griffin_db import Player, Rank
 from players_list import PlayersList
-from async_players import get_players, get_stats
+from async_players import commit, get_players, get_stats
 
 engine = sqlalchemy.create_engine(SQLALCHEMY_DATABASE_URI, echo=False)
 Session = sessionmaker(bind=engine)
@@ -92,6 +92,8 @@ class MainForm(Ui_Main_Form):
         self.statusBar.removeWidget(self.progressBar)
 
     def set_controls_disabled(self, disabled=True):
+        self.rank.setDisabled(disabled)
+        self.sostavList.setDisabled(disabled)
         self.scores.setDisabled(disabled)
         self.plusScoresButton.setDisabled(disabled)
         self.plusScoresButton_2.setDisabled(disabled)
@@ -256,10 +258,14 @@ class MainForm(Ui_Main_Form):
         self.plus_minus_scores(lambda x, y: x - y)
 
     def save(self):
-        # save all changes and inform user about it
-        session.commit()
-        if remote_db:
-            self.players.save_dump()
+        # save all changes asynchronusly and inform user about it
+        future = asyncio.ensure_future(commit(session, self.players))
+        future.add_done_callback(self.saved)
+        self.statusBar.showMessage("Сохранение изменений")
+        self.set_controls_disabled()
+
+    def saved(self, _):
+        self.set_controls_disabled(False)
         self.statusBar.showMessage("Изменения сохранены")
         QTimer.singleShot(3000, self.ready)
 
@@ -379,9 +385,12 @@ class MainForm(Ui_Main_Form):
         self.fill_data(changes=updates)
         self.ready()
         self.updateButton.setDisabled(False)
-        session.commit()
-        if remote_db:
-            self.players.save_dump()
+
+        # save changes asynchronusly
+        future = asyncio.ensure_future(commit(session, self.players))
+        future.add_done_callback(self.saved)
+        self.statusBar.showMessage("Сохранение изменений")
+        self.set_controls_disabled()
 
     def connection_error(self, msg=None):
         if msg is None:
