@@ -19,7 +19,7 @@ from griffin_ui import Ui_Main_Form
 from async_open_ssh import run_process
 from griffin_db import Player, Rank
 from players_list import PlayersList
-from async_players import commit, get_players, get_stats
+from async_players import commit, rollback, get_players, get_stats
 
 engine = sqlalchemy.create_engine(SQLALCHEMY_DATABASE_URI, echo=False)
 Session = sessionmaker(bind=engine)
@@ -271,11 +271,15 @@ class MainForm(Ui_Main_Form):
 
     def cancel(self):
         # cancel all changes
-        session.rollback()
-        change = None
-        if remote_db:
-            changes = self.players.count_diff()
-        self.fill_data(changes=changes)
+        future = asyncio.ensure_future(rollback(session, self.players))
+        future.add_done_callback(self.canceled)
+        self.statusBar.showMessage("Откат изменений")
+        self.set_controls_disabled()
+
+    def canceled(self, future):
+        self.fill_data(changes=future.result())
+        self.set_controls_disabled(False)
+        self.ready()
 
     def export(self):
         # export data to file or clipboard
