@@ -4,7 +4,7 @@ import asyncio
 import requests
 import time
 
-from config import clan, remote_db
+from config import clan
 from quamash import QEventLoop, QThreadExecutor
 from PyQt5.QtWidgets import QMessageBox
 
@@ -13,17 +13,14 @@ async def commit(session, players):
     loop = asyncio.get_event_loop()
     with QThreadExecutor(1) as executor:
         await loop.run_in_executor(executor, session.commit)
-        if remote_db:
-            await loop.run_in_executor(executor, players.save_dump)
+        await loop.run_in_executor(executor, players.save_dump)
 
 async def rollback(session, players):
-    # async rollback
+    # async rollback and count score changes
     loop = asyncio.get_event_loop()
     with QThreadExecutor(1) as executor: 
         await loop.run_in_executor(executor, session.rollback)
-        change = None
-        if remote_db:
-            changes = await loop.run_in_executor(executor, players.count_diff)
+        changes = await loop.run_in_executor(executor, players.count_diff)
         return changes
 
 async def get_players(wnd):

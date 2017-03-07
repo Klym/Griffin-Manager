@@ -258,6 +258,9 @@ class MainForm(Ui_Main_Form):
         self.plus_minus_scores(lambda x, y: x - y)
 
     def save(self):
+        if not remote_db:
+            session.commit()
+            return
         # save all changes asynchronusly and inform user about it
         future = asyncio.ensure_future(commit(session, self.players))
         future.add_done_callback(self.saved)
@@ -270,6 +273,10 @@ class MainForm(Ui_Main_Form):
         QTimer.singleShot(3000, self.ready)
 
     def cancel(self):
+        if not remote_db:
+            session.rollback()
+            self.fill_data()
+            return
         # cancel all changes
         future = asyncio.ensure_future(rollback(session, self.players))
         future.add_done_callback(self.canceled)
@@ -390,6 +397,9 @@ class MainForm(Ui_Main_Form):
         self.ready()
         self.updateButton.setDisabled(False)
 
+        if not remote_db:
+            session.commit()
+            return
         # save changes asynchronusly
         future = asyncio.ensure_future(commit(session, self.players))
         future.add_done_callback(self.saved)
