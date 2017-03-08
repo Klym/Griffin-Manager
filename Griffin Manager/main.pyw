@@ -20,6 +20,7 @@ with QEventLoop(app) as loop:
     try:
         ui = griffin.MainForm(window)
         window.show()
+        loop.run_forever()
     except Exception as ex:
         msgBox = QMessageBox()
         exit = msgBox.about(window, "Ошибка", ex.args[0])

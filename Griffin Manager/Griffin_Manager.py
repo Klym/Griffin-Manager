@@ -387,9 +387,10 @@ class MainForm(Ui_Main_Form):
         except HTTPError as err:
             self.connection_error(msg=err.args[0])
             return
-        except Exception:
+        """except Exception as ex:
+            print(ex.args)
             self.connection_error(msg="Неизвестная ошибка")
-            return
+            return"""
 
         # refresh gui
         QTimer.singleShot(2000, self.remove_progress)
