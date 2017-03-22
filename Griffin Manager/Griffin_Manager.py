@@ -16,7 +16,7 @@ from PyQt5.QtGui import QClipboard, QBrush, QColor
 from PyQt5.QtCore import QTimer
 
 from griffin_ui import Ui_Main_Form
-from async_open_ssh import run_process
+from async_open_ssh import openSSHTunnel
 from griffin_db import Player, Rank
 from players_list import PlayersList
 from async_players import commit, rollback, get_players, get_stats
@@ -53,7 +53,7 @@ class MainForm(Ui_Main_Form):
         
         # wait for ssh connecting and select data if database is remote
         if remote_db:
-            future_ssh = asyncio.ensure_future(run_process())
+            future_ssh = asyncio.ensure_future(openSSHTunnel())
             future_ssh.add_done_callback(self.get_data_remote)
         else:
             self.get_data()
